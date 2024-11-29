@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: url-extractor
+  namespace: url-extractor
+  labels:
+    app: url-extractor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: url-extractor
+  template:
+    metadata:
+      labels:
+        app: url-extractor
+    spec:
+      containers:
+        - name: url-extractor
+          image: ghcr.io/paulden/tech-case-study:main
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - '/bin/sh'
+          args:
+            - '-c'
+            - '/opt/url_extractor/cli.py -u https://news.ycombinator.com -o stdout && sleep infinite'
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          securityContext:
+            runAsUser: 1001
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - url-extractor
+                topologyKey: kubernetes.io/hostname
+              weight: 100
